@@ -1,0 +1,13 @@
+:root {
+    --primary-color: #007bff;
+}
+
+.dark {
+    --primary-color: #343a40;
+}
+
+body, html, #app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
