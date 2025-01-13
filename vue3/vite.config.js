@@ -64,36 +64,3 @@ export default defineConfig(({ command, mode }) => {
     },
   }
 })
-// export default defineConfig({
-//   plugins: [
-//     vue(),
-//     vueJsx(),
-//     vueDevTools(),
-//     autoImport({
-//       imports: [
-//         'vue',
-//         'vue-router',
-//         'pinia',
-//       ],
-//       dts: false,
-//       dirs: [
-//         './src/hooks/**',
-//       ],
-//     }),
-//     components({
-//       globs: [
-//         'src/components/*/index.vue',
-//       ],
-//       dts: false,
-//     }),
-//     createSvgIconsPlugin({
-//       iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/')],
-//       symbolId: 'icon-[dir]-[name]',
-//     }),
-//   ],
-//   resolve: {
-//     alias: {
-//       '@': path.resolve(__dirname, 'src'),
-//     },
-//   },
-// })

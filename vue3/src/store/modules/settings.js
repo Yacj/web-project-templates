@@ -26,6 +26,7 @@ const useSettingsStore = defineStore('Settings', () => {
     colorScheme.value = colorScheme.value === 'light' ? 'dark' : 'light'
     updateTheme()
   }
+
   watch(
     colorScheme,
     (val) => {
