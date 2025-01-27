@@ -1,8 +1,8 @@
-const fp = require('fastify-plugin');
-const NodeCache = require('node-cache');
+const fp = require('fastify-plugin')
+const NodeCache = require('node-cache')
 
-module.exports = fp(async function (fastify, opts) {
-    const cache = new NodeCache();
+module.exports = fp(async (fastify, opts) => {
+  const cache = new NodeCache()
 
-    fastify.decorate('cache', cache);
-});
+  fastify.decorate('cache', cache)
+})
