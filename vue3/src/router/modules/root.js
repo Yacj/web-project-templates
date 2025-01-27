@@ -1,21 +1,14 @@
 /**
- * @typedef {object} RouteMeta
- * @property {string} [title] - The page title
- */
-
-/**
- * @typedef {object} RouteRecord
- * @property {string} path - Route path
- * @property {Function} component - Route component (lazy loaded)
- * @property {RouteMeta} [meta] - Route metadata
- */
-/**
- * @type {RouteRecord[]}
+ * Vue Router configuration
+ * @type {import('vue-router').RouteRecordRaw[]}
  */
 const routes = [
   {
     path: '/',
     component: () => import('@/views/index.vue'),
+    meta: {
+      title: '首页',
+    },
   },
 ]
 

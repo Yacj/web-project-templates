@@ -1,49 +1,62 @@
 import axios from 'axios'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
-/**
- * 自定义 Axios 配置
- * @typedef {object} CustomAxiosRequestConfig
- */
+import { isDev } from '/@/utils/index'
+// import { getToken } from '@/utils/auth'
 
-/**
- * 通用响应结构
- * @typedef {object} BaseResponse
- * @property {number} code - 响应状态码
- * @property {any} data - 响应数据
- * @property {string} message - 响应消息
- */
+/** @typedef {import('axios').AxiosRequestConfig} AxiosRequestConfig */
+
+const BASE_URL = isDev && import.meta.env.VITE_OPEN_PROXY === 'true'
+  ? '/proxy/'
+  : import.meta.env.VITE_APP_API_BASEURL
 
 // 创建 Axios 实例
 const service = axios.create({
-  baseURL: (import.meta.env.DEV && import.meta.env.VITE_OPEN_PROXY === 'true') ? '/proxy/' : import.meta.env.VITE_APP_API_BASEURL,
+  baseURL: BASE_URL,
   timeout: 1000 * 60,
-  responseType: 'json',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 })
 
 // 错误代码映射表
-const errorCodeMap = {
-  400: '请求错误',
-  401: '未授权，请重新登录',
-  403: '拒绝访问',
-  404: '请求地址不存在',
+const HttpErrorMap = {
+  400: '请求参数错误',
+  401: '身份验证失败，请重新登录',
+  403: '无权访问该资源',
+  404: '请求资源不存在',
+  405: '请求方法不允许',
+  408: '请求超时',
   500: '服务器内部错误',
   502: '网关错误',
   503: '服务不可用',
   504: '网关超时',
 }
 
+const BusinessErrorMap = {
+  1001: '业务操作失败',
+  1002: '数据验证错误',
+  // 添加更多业务错误码...
+}
+
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
-    if (!config.hideLoading) {
+    if (!config.hideProgress) {
       NProgress.start()
     }
+
+    // 自动携带 Token 逻辑示例
+    // const token = getToken()
+    // if (token && !config.anonymous) {
+    //   config.headers.Authorization = `Bearer ${token}`
+    // }
+
     return config
   },
   (error) => {
     NProgress.done()
-    return Promise.reject(error.message || '请求错误')
+    return Promise.reject(error)
   },
 )
 
@@ -51,71 +64,105 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response) => {
     NProgress.done()
-    const { code } = response.data
-    if (typeof code !== 'undefined' && code !== 200) {
-      return Promise.reject(new Error(errorCodeMap[code] || '未知错误'))
+
+    // 处理二进制响应（如文件下载）
+    if (response.config.responseType === 'blob') {
+      return response.data
     }
-    return Promise.resolve(response.data)
+
+    const { code, data, message } = response.data
+
+    // 处理业务层错误
+    if (code !== 200) {
+      const errorMessage = BusinessErrorMap[code] || message || '未知业务错误'
+      return Promise.reject(new Error(errorMessage))
+    }
+
+    return data
   },
   (error) => {
     NProgress.done()
+
+    // 处理取消请求的特殊情况
+    if (axios.isCancel(error)) {
+      return Promise.reject(new Error('请求已取消'))
+    }
+
+    // 处理 HTTP 错误
     const status = error.response?.status
-    const message = errorCodeMap[status] || error.message || '请求错误'
-    return Promise.reject(message)
+    let errorMessage = error.message
+
+    if (status) {
+      errorMessage = HttpErrorMap[status] || `HTTP 错误: ${status}`
+
+      // 自动处理 401 错误
+      if (status === 401) {
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+      }
+    }
+
+    return Promise.reject(new Error(errorMessage))
   },
 )
 
 /**
- * 封装请求对象
+ * 创建可取消的请求对象
+ * @typedef {object} RequestTask
+ * @property {Promise} promise - 请求 Promise
+ * @property {Function} cancel - 取消请求的方法
  */
+
+/**
+ * 核心请求方法
+ * @param {AxiosRequestConfig} config
+ * @returns {RequestTask} - 可取消的请求对象
+ */
+function createRequest(config) {
+  const controller = new AbortController()
+
+  const promise = service({
+    ...config,
+    signal: controller.signal,
+  })
+
+  return {
+    promise,
+    cancel: () => controller.abort(),
+  }
+}
+
+// 封装常用请求方法
 const request = {
-  /**
-   * 发送 GET 请求
-   * @param {string} url - 请求的 URL
-   * @param {object} [params] - 请求参数
-   * @returns {Promise<any>} - 包含请求结果的 Promise
-   */
-  get(url, params) {
-    return request.request('GET', url, { params })
+  get(url, params, config) {
+    return createRequest({ ...config, method: 'GET', url, params })
   },
 
-  /**
-   * 发送 POST 请求
-   * @param {string} url - 请求的 URL
-   * @param {object} [data] - 请求数据
-   * @returns {Promise<any>} - 包含请求结果的 Promise
-   */
-  post(url, data) {
-    return request.request('POST', url, { data })
+  post(url, data, config) {
+    return createRequest({ ...config, method: 'POST', url, data })
   },
 
-  /**
-   * 发送上传文件请求
-   * @param {string} url - 请求的 URL
-   * @param {object} data - 文件数据
-   * @returns {Promise<any>} - 包含请求结果的 Promise
-   */
-  upload(url, data) {
-    const headers = { 'Content-Type': 'multipart/form-data' }
-    return request.request('POST', url, { data, headers })
+  put(url, data, config) {
+    return createRequest({ ...config, method: 'PUT', url, data })
   },
 
-  /**
-   * 通用请求方法
-   * @param {string} method - 请求方法 (GET, POST 等)
-   * @param {string} url - 请求的 URL
-   * @param {object} [config] - 请求配置
-   * @returns {Promise<any>} - 包含请求结果的 Promise
-   */
-  request(method, url, config = {}) {
-    return new Promise((resolve, reject) => {
-      service({ method, url, ...config })
-        .then((res) => {
-          resolve(res)
-        })
-        .catch((error) => {
-          reject(error)
-        })
+  delete(url, params, config) {
+    return createRequest({ ...config, method: 'DELETE', url, params })
+  },
+
+  upload(url, file, config) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    return createRequest({
+      ...config,
+      method: 'POST',
+      url,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...config?.headers,
+      },
     })
   },
 }

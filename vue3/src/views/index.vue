@@ -1,4 +1,5 @@
 <script setup>
+import CopyText from '@/components/CopyText/CopyText.vue';
 import useSettingsStore from '@/store/modules/settings.js'
 
 const settingsStore = useSettingsStore()
@@ -18,6 +19,7 @@ function toggleTheme() {
     <button @click="toggleTheme">
       切换主题
     </button>
+    <CopyText text="ue 3!" />
   </div>
 </template>
 
