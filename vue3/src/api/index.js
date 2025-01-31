@@ -1,7 +1,7 @@
+import { isDev } from '@/utils/index.js'
 import axios from 'axios'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
-import { isDev } from '/@/utils/index'
 // import { getToken } from '@/utils/auth'
 
 /** @typedef {import('axios').AxiosRequestConfig} AxiosRequestConfig */

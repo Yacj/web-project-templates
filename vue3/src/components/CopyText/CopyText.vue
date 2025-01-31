@@ -1,4 +1,5 @@
 <script setup>
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
 import { useClipboard } from '@vueuse/core'
 import { ref } from 'vue'
 

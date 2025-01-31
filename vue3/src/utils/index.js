@@ -52,10 +52,10 @@ export function transformKeyValue(array, map, isChildren = false) {
         // 如果 isChildren 为 true 且当前值是对象或数组，则递归处理
         if (isChildren && (typeof item[key] === 'object' && item[key] !== null)) {
           if (Array.isArray(item[key])) {
-            newItem[newKey] = modifyArrayKeys(item[key], map, isChildren)
+            newItem[newKey] = transformKeyValue(item[key], map, isChildren)
           }
           else {
-            newItem[newKey] = modifyArrayKeys([item[key]], map, isChildren)[0]
+            newItem[newKey] = transformKeyValue([item[key]], map, isChildren)[0]
           }
         }
       }
@@ -154,6 +154,6 @@ export function uniqueArrayByKey(array, key) {
  * 判断是否是开发环境
  * @returns {boolean} - true 为开发环境，false 为生产环境
  */
-function isDev() {
+export function isDev() {
   return import.meta.env.DEV
 }

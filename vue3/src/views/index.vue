@@ -1,5 +1,5 @@
 <script setup>
-import CopyText from '@/components/CopyText/CopyText.vue';
+import CopyText from '@/components/CopyText/CopyText.vue'
 import useSettingsStore from '@/store/modules/settings.js'
 
 const settingsStore = useSettingsStore()
