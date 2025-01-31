@@ -8,4 +8,7 @@ function setToken(token) {
   storage.set('token', token)
 }
 
-export { getToken, setToken }
+function removeToken() {
+  storage.remove('token')
+}
+export { getToken, setToken, removeToken }

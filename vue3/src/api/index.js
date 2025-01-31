@@ -95,10 +95,8 @@ service.interceptors.response.use(
     if (status) {
       errorMessage = HttpErrorMap[status] || `HTTP 错误: ${status}`
 
-      // 自动处理 401 错误
       if (status === 401) {
-        localStorage.removeItem('token')
-        window.location.href = '/login'
+        // removeToken()
       }
     }
 
