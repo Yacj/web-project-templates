@@ -10,3 +10,11 @@ export function firstUpperCase(str) {
   if (!str) { return str }
   return str[0].toUpperCase().concat(str.substring(1, str.length))
 }
+
+/**
+ * 判断是否是开发环境
+ * @returns {boolean}
+ */
+export function isDev() {
+  return import.meta.env.MODE === "development";
+}

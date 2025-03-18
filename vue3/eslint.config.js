@@ -11,6 +11,7 @@ export default antfu(
     rules: {
       'eslint-comments/no-unlimited-disable': 'off',
       'curly': ['error', 'all'],
+      'no-console': 'off',
     },
   },
   {
