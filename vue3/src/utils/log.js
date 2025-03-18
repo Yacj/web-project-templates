@@ -4,7 +4,7 @@
  * 并提供防止重复日志输出的功能。使用 `dayjs` 进行时间格式化。
  */
 
-import { isDev } from '@/utils/index.js' // 引入 dayjs 处理时间
+import { isDev } from '@/utils/index.js'
 import dayjs from 'dayjs'
 
 const logSet = new Set() // 存储已记录的日志，防止重复

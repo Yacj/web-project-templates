@@ -12,6 +12,7 @@ export function firstUpperCase(str) {
   }
   return str[0].toUpperCase().concat(str.substring(1, str.length))
 }
+
 /**
  * 修改数组中的对象的键名和键值
  * @param {Array} array - 需要修改的数组
@@ -152,16 +153,8 @@ export function uniqueArrayByKey(array, key) {
 
 /**
  * 判断是否是开发环境
- * @returns {boolean} - true 为开发环境，false 为生产环境
- */
-export function isDev() {
-  return import.meta.env.DEV
-}
-
-/**
- * 判断是否是开发环境
  * @returns {boolean}
  */
 export function isDev() {
-  return import.meta.env.MODE === "development";
+  return import.meta.env.MODE === 'development'
 }
