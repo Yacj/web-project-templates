@@ -30,8 +30,8 @@ export default defineConfig(({ command, mode }) => {
         ],
       }),
       components({
-        globs: [
-          'src/components/*/index.vue',
+        dirs: [
+          'src/components',
         ],
         include: [/\.vue$/, /\.vue\?vue/, /\.jsx$/],
         dts: false,

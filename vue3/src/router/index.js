@@ -1,51 +1,68 @@
 import useSettingsStore from '@/store/modules/settings.js'
-
 import NProgress from 'nprogress'
 import { createRouter, createWebHashHistory } from 'vue-router'
-import 'nprogress/nprogress.css'
 
-let routes = []
+// 可选的进度条样式配置
+import 'nprogress/nprogress.css'
+// 如需自定义样式可引入本地样式文件
+// import '@/styles/nprogress.scss'
+
+// 自动加载路由模块
 const routesContext = import.meta.glob('./modules/*.js', { eager: true })
-Object.keys(routesContext).forEach((v) => {
-  routes.push(routesContext[v].default)
+
+// 处理路由模块
+const moduleRoutes = Object.values(routesContext).map((module) => {
+  if (!module.default) {
+    console.error('路由模块缺少默认导出', module)
+    return []
+  }
+  return module.default
 })
-routes.push({
-  path: '/:pathMatch(.*)*',
-  component: () => import('@/views/[...all].vue'),
-  meta: {
-    title: '找不到页面',
+
+// 扁平化路由并添加通配路由
+const routes = [
+  ...moduleRoutes.flat(),
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('@/views/[...all].vue'),
+    meta: {
+      title: '找不到页面',
+    },
   },
-})
-routes = routes.flat()
+]
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
 })
 
-router.beforeEach((to, _from, next) => {
+// 配置进度条参数
+NProgress.configure({
+  showSpinner: false,
+  parent: '#app',
+})
+
+router.beforeEach((to, from, next) => {
   NProgress.start()
+
+  // 示例鉴权逻辑（根据实际需求实现）
+  // const userStore = useUserStore()
+  // if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+  //   return next({ name: 'Login' })
+  // }
+
   next()
-  // if (to.meta.requireLogin) {
-  //   if (userStore.isLogin) {
-  //     next()
-  //   }
-  //   else {
-  //     next({
-  //       name: 'login',
-  //       query: {
-  //         redirect: to.fullPath,
-  //       },
-  //     })
-  //   }
-  // }
-  // else {
-  //   next()
-  // }
 })
 
 router.afterEach((to) => {
   NProgress.done()
-  useSettingsStore().setTitle(to.meta.title ?? '')
+  useSettingsStore().setTitle(to.meta.title || '默认标题')
 })
+
+// 异常处理
+router.onError((error) => {
+  NProgress.done()
+  console.error('路由错误:', error)
+})
+
 export default router

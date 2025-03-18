@@ -18,6 +18,14 @@ dayjs.extend(advancedFormat)
 dayjs.extend(customParseFormat)
 dayjs.extend(dayJsIsBetween)
 
+/**
+ * 日期格式化
+ * @param {Date} date - 日期对象
+ * @param {string} format - 格式化字符串
+ * @returns {string} 格式化后的日期字符串
+ * @example
+ * formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss') // => '2024-01-12 12:00:00'
+ */
 export function formatDate(date = new Date(), format = 'YYYY-MM-DD HH:mm:ss') {
   return dayjs(date).format(format)
 }
@@ -36,16 +44,27 @@ export function getFirstDayOfMonth({ year, month }) {
 }
 
 /**
- * 获取指定年月的天数
- * @param {object} dateObj - 日期对象
- * @param {number} dateObj.year - 年份
- * @param {number} dateObj.month - 月份（0-11）
- * @returns {number} 该月的总天数
+ * 获取指定年份和月份的天数
+ *
+ * @param {object} params - 参数对象
+ * @param {number} [params.year] - 指定的年份，默认是当前年份
+ * @param {number} [params.month] - 指定的月份（1-12），默认是当前月份
+ * @returns {number} 指定月份的天数
+ *
  * @example
- * getDaysInMonth({ year: 2024, month: 1 }) // => 29 (闰年2月)
+ * // 获取2023年2月的天数
+ * getDaysInMonth({ year: 2023, month: 2 }); // 返回 28
+ *
+ * @example
+ * // 获取当前月份的天数
+ * getDaysInMonth({});
  */
-export function getDaysInMonth({ year, month }) {
-  return new Date(year, month + 1, 0).getDate()
+export function getDaysInMonth({ year = dayjs().year(), month = dayjs().month() + 1 } = {}) {
+  if (month < 1 || month > 12) {
+    throw new Error('月份必须在1到12之间')
+  }
+
+  return dayjs(`${year}-${month}-01`).daysInMonth()
 }
 
 /**
@@ -134,8 +153,12 @@ export function compareAsc(date1, date2) {
   const d1 = date1.getTime()
   const d2 = date2.getTime()
 
-  if (d1 < d2) { return -1 }
-  if (d1 > d2) { return 1 }
+  if (d1 < d2) {
+    return -1
+  }
+  if (d1 > d2) {
+    return 1
+  }
   return 0
 }
 
@@ -226,115 +249,6 @@ export function subtractMonth(date, num) {
  */
 export function addMonth(date, num) {
   return dayjs(date).add(num, 'month').toDate()
-}
-
-/**
- * 获取日历网格数据
- * @param {object} dateInfo - 日期信息
- * @param {number} dateInfo.year - 年份
- * @param {number} dateInfo.month - 月份（0-11）
- * @param {object} options - 配置选项
- * @param {number} options.firstDayOfWeek - 一周的第一天（0-6，0表示周日）
- * @param {boolean} [options.showWeekOfYear] - 是否显示年度周数
- * @param {Function} [options.disableDate] - 禁用日期的判断函数
- * @param {Date} [options.minDate] - 可选择的最小日期
- * @param {Date} [options.maxDate] - 可选择的最大日期
- * @param {string} [options.dayjsLocale] - 地区设置
- * @param {boolean} [options.cancelRangeSelectLimit] - 是否取消范围选择的限制
- * @returns {Array} 日历网格数据
- * @example
- * getWeeks(
- *   { year: 2024, month: 0 },
- *   { firstDayOfWeek: 1, showWeekOfYear: true }
- * )
- * // 返回一个 6x7 的网格数据，包含日期信息
- */
-export function getWeeks({ year, month }, options) {
-  const {
-    firstDayOfWeek,
-    showWeekOfYear = false,
-    disableDate = currentDay => false,
-    minDate,
-    maxDate,
-    dayjsLocale = 'zh-cn',
-    cancelRangeSelectLimit = false,
-  } = options
-
-  const prependDay = getFirstDayOfMonth({ year, month })
-  const appendDay = getLastDayOfMonth({ year, month })
-  const maxDays = getDaysInMonth({ year, month })
-  const daysArr = []
-  const today = getToday()
-
-  // 生成当月日期
-  for (let i = 1; i <= maxDays; i++) {
-    const currentDay = new Date(year, month, i)
-    daysArr.push({
-      text: i,
-      active: false,
-      value: currentDay,
-      disabled: (isFunction(disableDate) && disableDate(currentDay))
-        || (!cancelRangeSelectLimit && outOfRanges(currentDay, minDate, maxDate)),
-      now: isSame(today, currentDay),
-      firstDayOfMonth: i === 1,
-      lastDayOfMonth: i === maxDays,
-      type: 'current-month',
-      dayjsObj: dayjs(currentDay).locale(dayjsLocale),
-    })
-  }
-
-  // 补充上月日期
-  if (prependDay.getDay() !== firstDayOfWeek) {
-    prependDay.setDate(0)
-    while (true) {
-      daysArr.unshift({
-        text: prependDay.getDate().toString(),
-        active: false,
-        value: new Date(prependDay),
-        disabled: (isFunction(disableDate) && disableDate(currentDay))
-          || (!cancelRangeSelectLimit && outOfRanges(prependDay, minDate, maxDate)),
-        additional: true,
-        type: 'prev-month',
-        dayjsObj: dayjs(prependDay).locale(dayjsLocale),
-      })
-      prependDay.setDate(prependDay.getDate() - 1)
-      if (prependDay.getDay() === Math.abs(firstDayOfWeek + 6) % 7) { break }
-    }
-  }
-
-  // 补充下月日期
-  const LEN = 42 // 6周 x 7天
-  while (daysArr.length < LEN) {
-    appendDay.setDate(appendDay.getDate() + 1)
-    daysArr.push({
-      text: appendDay.getDate(),
-      active: false,
-      value: new Date(appendDay),
-      disabled: (isFunction(disableDate) && disableDate(currentDay))
-        || (!cancelRangeSelectLimit && outOfRanges(appendDay, minDate, maxDate)),
-      additional: true,
-      type: 'next-month',
-      dayjsObj: dayjs(appendDay).locale(dayjsLocale),
-    })
-  }
-
-  // 分割成周数据
-  const dataList = chunk(daysArr, 7)
-
-  // 添加周数显示
-  if (showWeekOfYear) {
-    dataList.forEach((d) => {
-      d.unshift({
-        ...d[0],
-        active: false,
-        value: d[0].value,
-        text: dayjs(d[0].value).locale(dayjsLocale).week(),
-        dayjsObj: dayjs(d[0].value).locale(dayjsLocale),
-      })
-    })
-  }
-
-  return dataList
 }
 
 /**
