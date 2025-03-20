@@ -4,8 +4,6 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 
 // 可选的进度条样式配置
 import 'nprogress/nprogress.css'
-// 如需自定义样式可引入本地样式文件
-// import '@/styles/nprogress.scss'
 
 // 自动加载路由模块
 const routesContext = import.meta.glob('./modules/*.js', { eager: true })

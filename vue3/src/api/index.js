@@ -1,7 +1,5 @@
 import { isDev } from '@/utils/index.js'
 import axios from 'axios'
-import NProgress from 'nprogress'
-import 'nprogress/nprogress.css'
 // import { getToken } from '@/utils/auth'
 
 /** @typedef {import('axios').AxiosRequestConfig} AxiosRequestConfig */
@@ -42,10 +40,6 @@ const BusinessErrorMap = {
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
-    if (!config.hideProgress) {
-      NProgress.start()
-    }
-
     // 自动携带 Token 逻辑示例
     // const token = getToken()
     // if (token && !config.anonymous) {
@@ -55,7 +49,6 @@ service.interceptors.request.use(
     return config
   },
   (error) => {
-    NProgress.done()
     return Promise.reject(error)
   },
 )
@@ -63,8 +56,6 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response) => {
-    NProgress.done()
-
     // 处理二进制响应（如文件下载）
     if (response.config.responseType === 'blob') {
       return response.data
@@ -81,8 +72,6 @@ service.interceptors.response.use(
     return data
   },
   (error) => {
-    NProgress.done()
-
     // 处理取消请求的特殊情况
     if (axios.isCancel(error)) {
       return Promise.reject(new Error('请求已取消'))
@@ -111,56 +100,26 @@ service.interceptors.response.use(
  * @property {Function} cancel - 取消请求的方法
  */
 
-/**
- * 核心请求方法
- * @param {AxiosRequestConfig} config
- * @returns {RequestTask} - 可取消的请求对象
- */
-function createRequest(config) {
-  const controller = new AbortController()
-
-  const promise = service({
-    ...config,
-    signal: controller.signal,
-  })
-
-  return {
-    promise,
-    cancel: () => controller.abort(),
-  }
-}
-
 // 封装常用请求方法
 const request = {
-  get(url, params, config) {
-    return createRequest({ ...config, method: 'GET', url, params })
-  },
-
-  post(url, data, config) {
-    return createRequest({ ...config, method: 'POST', url, data })
-  },
-
-  put(url, data, config) {
-    return createRequest({ ...config, method: 'PUT', url, data })
-  },
-
-  delete(url, params, config) {
-    return createRequest({ ...config, method: 'DELETE', url, params })
-  },
-
-  upload(url, file, config) {
+  get: (url, params, config) => service({ ...config, method: 'GET', url, params }),
+  post: (url, data, config) => service({ ...config, method: 'POST', url, data }),
+  put: (url, data, config) => service({ ...config, method: 'PUT', url, data }),
+  patch: (url, data, config) => service({ ...config, method: 'PATCH', url, data }),
+  delete: (url, params, config) => service({ ...config, method: 'DELETE', url, params }),
+  upload: (url, files, config) => {
     const formData = new FormData()
-    formData.append('file', file)
+    if (Array.isArray(files)) {
+      files.forEach((file, i) => formData.append(`file${i}`, file))
+    }
+    else { formData.append('file', files) }
 
-    return createRequest({
+    return service({
       ...config,
       method: 'POST',
       url,
       data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        ...config?.headers,
-      },
+      headers: { 'Content-Type': 'multipart/form-data', ...config?.headers },
     })
   },
 }
